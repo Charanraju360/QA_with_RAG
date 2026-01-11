@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+chromadb
+python-dotenv
+requests
+pydantic
+PyPDF2
+python-docx
+nltk
