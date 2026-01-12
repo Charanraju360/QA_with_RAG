@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 from pydantic import BaseModel
+
 from core.embeddings import embed_text
 from utils.chroma_manager import search_vectors
 from core.llm import generate_answer
@@ -12,17 +13,23 @@ class AskRequest(BaseModel):
 @router.post("/ask")
 async def ask_question(req: AskRequest):
     try:
-        # embed the question
-        query_embedding = embed_text([req.question])[0]
+        # Embed question → 384-d
+        question_vec = embed_text([req.question])[0]
 
-        # search chroma
-        chunks = search_vectors(query_embedding)
+        # Search top chunks
+        chunks = search_vectors(question_vec)
 
-        # generate answer using LLM
-        answer = generate_answer(req.question, chunks)
+        if not chunks:
+            return {"answer": "The answer is not present in the document."}
+
+        # Combine into context
+        context = "\n".join(chunks)
+
+        # Generate LLM response
+        answer = generate_answer(req.question, context)
 
         return {"answer": answer}
 
     except Exception as e:
-        print("ASK ERROR >>>", str(e))
+        print("ASK ERROR:", e)
         return {"error": str(e)}

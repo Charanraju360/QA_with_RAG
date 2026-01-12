@@ -1,9 +1,25 @@
-def split_into_chunks(text, chunk_size=500):
-    words = text.split()
-    chunks = []
+import re
 
-    for i in range(0, len(words), chunk_size):
-        chunk = " ".join(words[i : i + chunk_size])
+def split_into_chunks(text, chunk_size=800, overlap=150):
+    """
+    Splits text into overlapping chunks.
+
+    chunk_size: size of each chunk
+    overlap: repeated content between chunks for better recall
+    """
+
+    # clean multiple spaces
+    text = re.sub(r"\s+", " ", text)
+
+    chunks = []
+    start = 0
+
+    while start < len(text):
+        end = start + chunk_size
+        chunk = text[start:end]
+
         chunks.append(chunk)
+
+        start = end - overlap  # move window with overlap
 
     return chunks

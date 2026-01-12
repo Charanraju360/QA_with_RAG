@@ -1,20 +1,18 @@
 from dotenv import load_dotenv
 load_dotenv()
+
 from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
 from api.upload import router as upload_router
 from api.ask import router as ask_router
+from fastapi.middleware.cors import CORSMiddleware
 
-import openai
+app = FastAPI()
 
-openai.api_base = "https://openrouter.ai/api/v1"
-openai.api_key = "YOUR_OPENROUTER_API_KEY"
-
-app = FastAPI(title="RAG API")
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -22,9 +20,3 @@ app.add_middleware(
 
 app.include_router(upload_router, prefix="/api")
 app.include_router(ask_router, prefix="/api")
-
-@app.get("/")
-def home():
-    return {"message": "Backend running"}
-
-

@@ -1,15 +1,26 @@
+import re
 import nltk
 from nltk.corpus import stopwords
-from nltk.tokenize import word_tokenize
 
-# download once
-nltk.download("punkt")
-nltk.download("stopwords")
+stop_words = set(stopwords.words("english"))
 
 def clean_text(text):
-    tokens = word_tokenize(text.lower())
-    stops = set(stopwords.words("english"))
-    
-    cleaned = [t for t in tokens if t.isalnum() and t not in stops]
-    
-    return " ".join(cleaned)
+    """
+    Clean extracted text before RAG pipeline:
+    - Remove URLs
+    - Remove special characters
+    - Remove extra spaces
+    - Lowercase
+    - Optional: remove stopwords
+    """
+
+    text = text.lower()
+
+    text = re.sub(r"http\S+", " ", text)
+    text = re.sub(r"[^a-z0-9\s.,;:!?-]", " ", text)
+    text = re.sub(r"\s+", " ", text)
+
+    # OPTIONAL: stopword removal
+    cleaned = " ".join([word for word in text.split() if word not in stop_words])
+
+    return cleaned

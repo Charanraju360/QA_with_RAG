@@ -1,29 +1,50 @@
 import chromadb
+from chromadb.utils import embedding_functions
 
-client = chromadb.Client()
+# Create persistent Chroma client
+client = chromadb.PersistentClient(path="chroma_db")
 
-# ChromaDB old versions do NOT support embedding_dim → remove it
+# Create or load collection
 collection = client.get_or_create_collection(
-    name="rag_chunks",
-    metadata={"hnsw:space": "cosine"}
+    name="rag_collection",
+    metadata={"hnsw:space": "cosine"}   # Use cosine similarity
 )
 
-def store_vectors(chunks, embeddings):
-    print("=== STORING 384-DIM EMBEDDINGS ===")
+# ----------------------------------------------------------------------
+# STORE VECTORS
+# ----------------------------------------------------------------------
+import uuid
 
-    ids = [f"chunk_{i}" for i in range(len(chunks))]
+def store_vectors(chunks, embeddings):
+    ids = [str(uuid.uuid4()) for _ in chunks]
 
     collection.add(
         ids=ids,
-        embeddings=embeddings,
-        documents=chunks
+        documents=chunks,
+        embeddings=embeddings
     )
 
+    print("Stored", len(chunks), "vectors.")
+
+# ----------------------------------------------------------------------
+# SEARCH VECTORS
+# ----------------------------------------------------------------------
 def search_vectors(query_embedding):
-    print("=== SEARCH USING 384-DIM EMBEDDING ===")
+    """
+    Retrieves top 5 most relevant chunks for RAG.
+    """
+
+    print("=== SEARCH ===")
 
     results = collection.query(
         query_embeddings=[query_embedding],
         n_results=5
     )
-    return results["documents"][0]
+
+    retrieved = results.get("documents", [[]])[0]
+
+    print("=== RETRIEVED CHUNKS ===")
+    for chunk in retrieved:
+        print(chunk[:200], "...")   # Print preview
+
+    return retrieved
