@@ -7,22 +7,30 @@ from utils.extract_text import extract_text
 from utils.nlp_processor import clean_text
 from core.text_splitter import split_into_chunks
 from core.embeddings import embed_text
-from utils.chroma_manager import store_vectors
+from utils.chroma_manager import store_vectors, reset_chroma
 
 router = APIRouter()
 UPLOAD_DIR = "uploaded_files/"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
+
 
 @router.post("/upload")
 async def upload_document(file: UploadFile = File(...)):
     try:
         print("=== UPLOAD STARTED ===")
 
+        # Save uploaded file
         file_path = os.path.join(UPLOAD_DIR, file.filename)
         with open(file_path, "wb") as f:
             f.write(await file.read())
 
-        print("File saved successfully")
+        print("File saved:", file_path)
+
+        # Remove old uploaded files (keep only current)
+        for existing in os.listdir(UPLOAD_DIR):
+            if existing != file.filename:
+                os.remove(os.path.join(UPLOAD_DIR, existing))
+        print("Old uploaded files cleared.")
 
         # Extract text
         if file.filename.endswith(".pdf"):
@@ -32,21 +40,24 @@ async def upload_document(file: UploadFile = File(...)):
         else:
             raw_text = extract_text(file_path)
 
-        print("Text extraction complete, length:", len(raw_text))
+        print("Text extraction done. Length:", len(raw_text))
 
         # Clean text
         cleaned = clean_text(raw_text)
-        print("Cleaned length:", len(cleaned))
+        print("Cleaned text length:", len(cleaned))
 
-        # Split into chunks
+        # Split text into chunks
         chunks = split_into_chunks(cleaned)
-        print("Chunks:", len(chunks))
+        print("Total chunks:", len(chunks))
 
-        # Generate embeddings (MiniLM = 384 dim)
+        # Embed chunks
         embeddings = embed_text(chunks)
-        print("Embedding complete. Example vector length:", len(embeddings[0]))
+        print("Embeddings completed.")
 
-        # Store in Chroma
+        # IMPORTANT: Reset database so ONLY this new file exists
+        reset_chroma()
+
+        # Store vectors
         store_vectors(chunks, embeddings)
 
         print("=== UPLOAD FINISHED ===")

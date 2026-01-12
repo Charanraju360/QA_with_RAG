@@ -1,19 +1,37 @@
 import chromadb
-from chromadb.utils import embedding_functions
+import uuid
 
-# Create persistent Chroma client
+# Persistent Chroma client
 client = chromadb.PersistentClient(path="chroma_db")
 
-# Create or load collection
+# Create initial collection
 collection = client.get_or_create_collection(
     name="rag_collection",
-    metadata={"hnsw:space": "cosine"}   # Use cosine similarity
+    metadata={"hnsw:space": "cosine"}
 )
 
-# ----------------------------------------------------------------------
-# STORE VECTORS
-# ----------------------------------------------------------------------
-import uuid
+
+def reset_chroma():
+    """
+    Deletes the entire ChromaDB collection so old vectors are removed.
+    Recreates a fresh empty collection.
+    """
+    global collection
+
+    try:
+        client.delete_collection("rag_collection")
+        print("Old Chroma collection deleted.")
+    except Exception as e:
+        print("No existing collection or deletion failed:", e)
+
+    # Recreate new empty collection
+    collection = client.get_or_create_collection(
+        name="rag_collection",
+        metadata={"hnsw:space": "cosine"}
+    )
+
+    print("New empty Chroma collection created.")
+
 
 def store_vectors(chunks, embeddings):
     ids = [str(uuid.uuid4()) for _ in chunks]
@@ -24,17 +42,15 @@ def store_vectors(chunks, embeddings):
         embeddings=embeddings
     )
 
-    print("Stored", len(chunks), "vectors.")
+    print(f"Stored {len(chunks)} vectors.")
+    return True
 
-# ----------------------------------------------------------------------
-# SEARCH VECTORS
-# ----------------------------------------------------------------------
+
 def search_vectors(query_embedding):
     """
-    Retrieves top 5 most relevant chunks for RAG.
+    Retrieves top 5 most relevant chunks.
     """
-
-    print("=== SEARCH ===")
+    print("=== SEARCHING VECTORS ===")
 
     results = collection.query(
         query_embeddings=[query_embedding],
@@ -45,6 +61,6 @@ def search_vectors(query_embedding):
 
     print("=== RETRIEVED CHUNKS ===")
     for chunk in retrieved:
-        print(chunk[:200], "...")   # Print preview
+        print(chunk[:200], "...")
 
     return retrieved
