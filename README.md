@@ -172,4 +172,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 - [FastAPI](https://fastapi.tiangolo.com/) for the web framework
 - [ChromaDB](https://www.trychroma.com/) for vector database
 - [Sentence Transformers](https://www.sbert.net/) for embeddings
-- [Groq](https://groq.com/) for LLM API
+
